@@ -3,15 +3,34 @@
 
 ## Loading and preprocessing the data
 
+```{r}
+library(data.table)
 
+setwd("/Users/cching/Coursera/Reproducible Research/RepData_PeerAssessment1")
+unzip("activity.zip")
+data <- data.table(read.csv("activity.csv", stringsAsFactors = FALSE))
+str(data)
+colnames(data)
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+totals <- data[, sum(steps, na.rm = TRUE), by = date]
+totals_mean <- mean(totals$V1)
+totals_median <- median(totals$V1)
+hist(totals$V1)
 
+```
+
+### The mean total steps is `r totals_mean` and the median is `r totals_median`
 
 ## What is the average daily activity pattern?
 
-
+```{r}
+avgs <- data[, mean(steps, na.rm = TRUE), by = interval]
+plot(avgs, type = "l")
+```
 
 ## Imputing missing values
 
