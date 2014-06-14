@@ -5,12 +5,18 @@
 
 ```{r}
 library(data.table)
+library(ggplot2)
 
 setwd("/Users/cching/Coursera/Reproducible Research/RepData_PeerAssessment1")
 unzip("activity.zip")
 data <- data.table(read.csv("activity.csv", stringsAsFactors = FALSE))
 str(data)
 colnames(data)
+
+# Pre-processing the data
+# 1. Make steps numeric so that we can assign the mean for our "impuning" stage
+# 2. Add weekday or weekend so we can sum intervals for weekdays and weekends
+
 ```
 
 ## What is mean total number of steps taken per day?
@@ -29,11 +35,55 @@ hist(totals$V1)
 
 ```{r}
 avgs <- data[, mean(steps, na.rm = TRUE), by = interval]
+max_avgs <- avgs[avgs[, V1 == max(V1)], ]
 plot(avgs, type = "l")
 ```
 
+### The interval with the maximum average number of steps is `r max_avgs$interval[1]` with a value of `r max_avgs$V1[1]`
+
 ## Imputing missing values
 
+```{r}
+# Compare complete.cases with is.na(steps), if the same
+# then all NA are in steps
+sum(!complete.cases(data))
+sum(is.na(data$steps))
 
+nas <- data[, is.na(steps)]
+sum(nas)
+
+d1 <- data[, steps := as.numeric(steps)]
+
+count <- 0
+    
+for (i in 1:nrow(d1)) {
+    
+    if (is.na(d1[i]$steps)) {
+        count <- count + 1
+        d1[i]$steps = avgs[interval == d1[i]$interval]$V1
+    }
+}
+
+count
+
+totals <- d1[, sum(steps, na.rm = TRUE), by = date]
+totals_mean <- mean(totals$V1)
+totals_median <- median(totals$V1)
+hist(totals$V1)
+
+```
+
+### The mean total steps is `r totals_mean` and the median is `r totals_median`
 
 ## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+d1_weekdays <- ifelse(weekdays(as.Date(d1$date)) == "Saturday" | weekdays(as.Date(d1$date)) == "Sunday", "weekend", "weekday")
+d1 <- cbind(d1, as.factor(d1_weekdays))
+
+# This doesn't work.  We need to separate the intervals
+# based on weekend|weekday, not all together.
+avgs <- d1[, mean(steps, na.rm = TRUE), by = list(interval, V2)]
+max_avgs <- avgs[avgs[, V1 == max(V1)], ]
+#plot(avgs, type = "l")
+qplot(interval, V1, data = avgs, facets = . ~ V2, geom = "line")
+```
