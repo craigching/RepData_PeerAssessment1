@@ -47,7 +47,7 @@ ggplot(totals, aes(x = steps)) +
 
 ![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
 
-The mean total steps taken per day is 9354 and the median is 10395.  There appears to be a pretty consistent burst of activity in the morning, possibly indicating some sort of daily exercise routine or walk.
+The mean total steps taken per day is 9354 and the median is 10395.
 
 ## What is the average daily activity pattern?
 
@@ -62,7 +62,7 @@ qplot(interval, mean, data = avgs, geom = "line")
 
 ![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
 
-The interval with the maximum average number of steps is 835 with a value of 206.
+The interval with the maximum average number of steps is 835 with a value of 206.  There appears to be a pretty consistent burst of activity in the morning, possibly indicating some sort of daily exercise routine or walk.
 
 ## Imputing missing values
 
@@ -105,7 +105,7 @@ ggplot(totals, aes(x = sum)) +
 ![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
 
 
-The mean total steps with our imputing strategy is 10766 and the median is 10766
+The mean total steps with our imputing strategy is 10766 and the median is 10766.
 
 The effect of using the mean total value for an interval with missing data appears to make the distribution more "normal" and to inflate the number of intervals with the overall mean total value.
 
