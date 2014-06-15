@@ -62,7 +62,7 @@ qplot(interval, mean, data = avgs, geom = "line")
 
 ![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
 
-### The interval with the maximum average number of steps is 835 with a value of 206
+The interval with the maximum average number of steps is 835 with a value of 206.
 
 ## Imputing missing values
 
@@ -83,6 +83,7 @@ str <- if (sum(!complete.cases(data)) == sum(is.na(data$steps))) {
 
 The "steps" column is the only column with missing data.
 
+Next, carry out replacing missing values with the means for the interval calcuated previously.
 
 ```r
 # The following for loop is *slow*, I welcome any comments in my evaluation
