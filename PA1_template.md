@@ -5,7 +5,7 @@ In this assignment we are analyzing the walking activity of a single person over
 
 ## Loading and preprocessing the data
 
-Pre-process the data by converting the "steps" column to numeric which will be useful later and add a day type indicating whether the given day (indicated by the "date" column) is a week day or a weekend day.
+Load and pre-process the data by converting the "steps" column to numeric which will be useful later and add a day type indicating whether the given day (indicated by the "date" column) is a week day or a weekend day so that we can compare and contrast week day activity to weekend activity.
 
 
 ```r
@@ -14,21 +14,32 @@ library(ggplot2)
 
 setwd("/Users/cching/Coursera/Reproducible Research/RepData_PeerAssessment1")
 
+# Load the data set
 if (!file.exists("activity.csv")) unzip("activity.zip")
-
 data <- data.table(read.csv("activity.csv", stringsAsFactors = FALSE))
-data <- data[, steps := as.numeric(steps)]
-data <- data[, daytype := ifelse(weekdays(as.Date(date)) == "Saturday" | weekdays(as.Date(date)) == "Sunday", "weekend", "weekday")]
 
+# Convert steps to numeric, this is useful when we do the impute
+# step later to fill in imputed values for missing data
+data <- data[, steps := as.numeric(steps)]
+
+# Add a daytype column indicating if the day is a week day
+# or weekend day
+data <- data[, daytype := ifelse(
+    weekdays(as.Date(date)) == "Saturday" |
+        weekdays(as.Date(date)) == "Sunday", "weekend", "weekday")]
+
+# Set knitr options to control the number of significant digits
 options(scipen = 1, digits = 7)
 ```
 
 ## What is mean total number of steps taken per day?
 
+The analysis done here is intended to show a distribution of total steps taken per day and report the mean and median values of the total steps.  The analysis ignores any missing values.
+
 
 ```r
 totals <- data[, list(steps = sum(steps, na.rm = TRUE)), by = date]
-totals_mean <- totals[, mean(steps)]
+totals_mean <- round(totals[, mean(steps)], digits = 0)
 totals_median <- totals[, median(steps)]
 ggplot(totals, aes(x = steps)) +
     geom_histogram(binwidth = 5000, colour = "black", fill = "steelblue")
@@ -36,9 +47,11 @@ ggplot(totals, aes(x = steps)) +
 
 ![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
 
-### The mean total steps is 9354.2295082 and the median is 10395
+The mean total steps taken per day is 9354 and the median is 10395.  There appears to be a pretty consistent burst of activity in the morning, possibly indicating some sort of daily exercise routine or walk.
 
 ## What is the average daily activity pattern?
+
+The analysis done here is intended to give an idea of the activity patterns of the individual at intervals during the day.  The mean per 5 minute interval is given and the interval with the highest mean number of steps is shown indicating what part of the day the individual was most active.
 
 
 ```r
@@ -49,39 +62,31 @@ qplot(interval, mean, data = avgs, geom = "line")
 
 ![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
 
-### The interval with the maximum average number of steps is 835 with a value of 206.1698113
+### The interval with the maximum average number of steps is 835 with a value of 206
 
 ## Imputing missing values
+
+In this analysis we devise a method for imputing the missing values and carry out the same analysis done in the section "What is the mean total number of steps taken per day?" to show the effect of trying to account for the missing data.  Our method for imputing the missing data is to use the mean of the total steps taken for the given interval.
+
+First, ensure that the missing values are only in the "steps" column of the data set:
 
 
 ```r
 # Compare complete.cases with is.na(steps), if the same
 # then all NA are in steps
-sum(!complete.cases(data))
+str <- if (sum(!complete.cases(data)) == sum(is.na(data$steps))) {
+    "The \"steps\" column is the only column with missing data."
+} else {
+    "Columns other than \"steps\" contain missing data."
+}
 ```
 
-```
-## [1] 2304
-```
+The "steps" column is the only column with missing data.
 
-```r
-sum(is.na(data$steps))
-```
-
-```
-## [1] 2304
-```
 
 ```r
-nas <- data[, is.na(steps)]
-sum(nas)
-```
-
-```
-## [1] 2304
-```
-
-```r
+# The following for loop is *slow*, I welcome any comments in my evaluation
+# that show how to do this faster with a data.table or otherwise!
 for (i in 1:nrow(data)) {
     
     if (is.na(data[i]$steps)) {
@@ -90,23 +95,30 @@ for (i in 1:nrow(data)) {
 }
 
 totals <- data[, list(sum = sum(steps, na.rm = TRUE)), by = date]
-totals_mean <- mean(totals$sum)
-totals_median <- median(totals$sum)
+totals_mean <- round(mean(totals$sum), digits = 0)
+totals_median <- round(median(totals$sum), digits = 0)
 ggplot(totals, aes(x = sum)) +
     geom_histogram(binwidth = 5000, colour = "black", fill = "steelblue")
 ```
 
-![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
 
-### The mean total steps is 10766.1886792 and the median is 10766.1886792
+
+The mean total steps with our imputing strategy is 10766 and the median is 10766
+
+The effect of using the mean total value for an interval with missing data appears to make the distribution more "normal" and to inflate the number of intervals with the overall mean total value.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
+This analysis is intended to show the difference in activity between week days and weekend days.
+
+
 ```r
 avgs <- data[, list(mean = mean(steps, na.rm = TRUE)), by = list(interval, daytype)]
-max_avgs <- avgs[avgs[, mean == max(mean)], ]
 qplot(interval, mean, data = avgs, facets = . ~ daytype, geom = c("line", "smooth"), method = "loess") +
     facet_wrap(~ daytype, nrow = 2, ncol = 1)
 ```
 
-![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6.png) 
+
+It appears that activity on the weekends is sustained at a slightly higher rate.  A loess smooth was added to bring out this characteristic in the data.  It also shows a spike in activity around the same time between week days and weekend days further strengthening the idea that there is some sort of exercise routine carried out earlier in the day.
